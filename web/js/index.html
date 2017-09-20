@@ -1,0 +1,509 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="description" content="">
+    <meta name="keywords" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>{$rule['title']}</title>
+    <!-- Set render engine for 360 browser -->
+    <meta name="renderer" content="webkit">
+    <!-- No Baidu Siteapp-->
+    <meta http-equiv="Cache-Control" content="no-siteapp"/>
+    <!-- Add to homescreen for Chrome on Android -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <!-- Add to homescreen for Safari on iOS -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <!-- 下面是所用文件 -->
+   <!-- <script src="js/jquery.js"></script>-->
+    <script src="{RES}js/jquery.js"></script>
+    <script src="{RES}js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="{RES}css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="{RES}css/fangzi_list.css"/>
+    <style>
+        pre {
+            margin: 0;
+            padding: 0;
+            font-size: inherit;
+            color: inherit;
+            word-break: break-all;
+            word-wrap: break-word;
+            background-color: transparent;
+            border: 0;
+            border-radius: 0;
+            line-height: inherit;
+            font-family: '微软雅黑';
+        }
+    </style>
+</head>
+<body>
+<div class="container-fluid">
+    <div class="row">
+        <div class="clearfix">
+            <img class="col-xs-12" src="{php echo toimage($rule['thumb'])}"/>
+        </div>
+        {loop $list $l}
+        <div class="info-wrap clearfix">
+            <a href="{php echo $this->createMobileUrl('img',array('lid'=>$l['id']))}"><img
+                    src="{php echo toimage($l['thumb'])}"/></a>
+            <ul class="info">
+                <li>
+                    <s>原价:￥{php echo number_format($l['oprice'],2)}</s>
+                    <a href="#" class="pull-right btn btn-golden" onclick="$('#lid').val('{$l["id"]}')"data-toggle="modal"
+                    data-target="#myModal">预定</a>
+                </li>
+                <li>
+                    特价:￥{php echo number_format($l['nprice'],2)}
+                </li>
+                <li>
+                    <pre>{$l['content']}</pre>
+                </li>
+            </ul>
+        </div>
+        {/loop}
+    </div>
+</div>
+<!-- Modal -->
+<div class="modal fade bs-example-modal-sm" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+    <div class="modal-dialog modal-sm" role="document">
+        <form method="post" action="{php echo $this->createMobileUrl('record',array('rid'=>$rid))}">
+            <input type="hidden" name="lid" id="lid">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                            aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="myModalLabel">预约信息</h4>
+                </div>
+                <div class="modal-body">
+                    <ul class="form-list">
+                        <li><label>真实姓名:</label><input type="text" placeholder="请输入姓名" name="realname"
+                                                       required="required"/></li>
+                        <li><label>手机号码:</label><input type="tel" maxlength="11" placeholder="请输入手机号码" name="mobile"
+                                                       required="required"/></li>
+                        <li><label>车牌号:</label><input type="text" placeholder="请输入车牌号" name="num"/></li>
+                        <li><label>到访日期:</label><input onchange="checkTime()" id="date" type="date"/></li>
+                        <li><label>时间: </label>
+                            <select id="day" onchange="timeChage(this.id)">
+                                <option id="noon">上午</option>
+                                <option id="after">下午</option>
+                            </select>
+
+                            <select id="time" onchange="ensureTime()">
+                            </select>
+
+                        </li>
+                        <li><label>确定时间:</label><input id="visitetime" type="text" name="visitetime"
+                                                       required="required"/>
+                        </li>
+
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <a type="button" class="btn btn-default" data-dismiss="modal">取消</a>
+                    <button type="submit" class="btn btn-golden">确定</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+<script>
+    var date = new Date();
+    var year = date.getFullYear();
+    var month = date.getMonth() + 1;
+    var day = date.getDate();
+
+    var $date;
+    var initDate;
+    var $time = $('#time');
+    var times = [
+        "08:00~08:30",
+        "08:30~09:00",
+        "09:00~09:30",
+        "09:30~10:00",
+        "10:00~10:30",
+        "10:30~11:00",
+        "11:00~11:30",
+        "11:30~12:00",//上午段
+        "12:00~12:30",
+        "12:30~01:00",
+        "01:00~01:30",
+        "01:30~02:00",
+        "02:00~02:30",
+        "02:30~03:00",
+        "03:00~03:30",
+        "03:30~04:00",
+        "04:00~04:30",
+        "04:30~05:00",
+        "05:00~05:30",
+        "05:30~06:00",
+        "06:00~06:30",
+        "06:30~07:00"
+    ]
+    $(function () {
+        initDate = initDate();
+        $date = $("#date");
+        // makeDate();
+        makeTime();
+        ensureTime();
+    });
+
+    //初始化时间
+    function makeTime() {
+
+        $("#time").empty();
+        day = date.getDate();
+        var minute = date.getMinutes();
+        var nowTime;
+        if (minute >=0 && minute <= 30) {
+            if (date.getHours() > 12) {
+                nowTime = ("0" + (date.getHours() - 12)) + ":" + '00' + "~" + ("0" + (date.getHours() - 12)) + ":" + '30';
+            } else if (date.getHours() >= 10 && date.getHours() <= 12) {
+                nowTime = (date.getHours()) + ":" + '00' + "~" + (date.getHours()) + ":" + '30';
+            } else if (date.getHours() <= 9) {
+                nowTime = ("0" + (date.getHours())) + ":" + '00' + "~" + ("0" + (date.getHours())) + ":" + '30';
+            } else if (date.getHours() == 12) {
+                nowTime = (date.getHours()) + ":" + '00' + "~" + ("01" + ":" + '00');
+            }
+        } else {
+
+            if (date.getHours() > 12) {
+                nowTime = ("0" + (date.getHours() - 12)) + ":" + '30' + "~" + ("0" + (date.getHours() + 1 - 12)) + ":" + '00';
+            } else if (date.getHours() >= 10 && date.getHours() < 12) {
+                nowTime = (date.getHours()) + ":" + '30' + "~" + (date.getHours() + 1) + ":" + '00';
+            } else if (date.getHours() < 9) {
+                nowTime = ("0" + (date.getHours())) + ":" + '30' + "~" + ("0" + (date.getHours())) + ":" + '00';
+            } else if (date.getHours() == 9) {
+                nowTime = ("0" + (date.getHours())) + ":" + '30' + "~" + (date.getHours() + 1) + ":" + '00';
+            } else if (date.getHours() == 12) {
+                nowTime = (date.getHours()) + ":" + '30' + "~" + ("01" + ":" + '00');
+            }
+
+        }
+        console.log("~~~~~~~~~~~~~~~~~" + nowTime);
+        var today = $("#date").prop("value").split("-")[2] == day ? true : false;
+        var $day = $("#day");
+        var isAfter = $day.val() == '下午' ? true : false;
+
+        console.log("当前时间————————》》》》》》》》" + (date.getHours()).toString().length);
+
+                if (today && date.getHours() > 19) {
+                    alert("执行错误")
+                    if (isAfter) {
+                        $time.empty();
+                        for (var i = 8; i < times.length; i++) {
+                            $time.append('<option disabled="disabled">' + times[i] + "</option>");
+                        }
+                    } else {
+                        $time.empty();
+                        for (var i = 0; i < times.length - 14; i++) {
+                            $time.append('<option disabled="disabled">' + times[i] + "</option>");
+                        }
+                    }
+
+                    return;
+                }
+                if (today && date.getHours() < 8) {
+                    alert("执行错误")
+                    if (isAfter) {
+                        $time.empty();
+                        for (var i = 8; i < times.length; i++) {
+                            $time.append('<option>' + times[i] + "</option>");
+                        }
+                    } else {
+                        $time.empty();
+                        for (var i = 0; i < times.length - 14; i++) {
+                            $time.append('<option>' + times[i] + "</option>");
+                        }
+                    }
+
+                    return;
+                }
+        for (var i = 0; i < times.length - 14; i++) {
+            if (today) {
+
+                if (times.indexOf(nowTime) > i || times.indexOf(nowTime) == -1) {
+                    $time.append('<option disabled="disabled">' + times[i] + "</option>");
+
+                } else {
+                    $time.append('<option>' + times[i] + "</option>");
+                }
+            } else {
+                $time.append('<option>' + times[i] + "</option>");
+            }
+        }
+    }
+
+
+    //初始化日期
+    function makeDate() {
+
+        var year, month, day;
+        $date = document.getElementById('date')
+        //相隔五天
+        var date = new Date();
+        day = date.getDate();
+        month = date.getMonth() + 1;
+        year = date.getFullYear();
+        var mDay = day;
+        var mMonth = month;
+        if (day < 10) {
+            var mDay = '0' + day;
+        }
+
+        if (month < 10) {
+            var mMonth = '0' + month;
+        }
+        var min = year + "-" + mMonth + "-" + mDay;
+        var days = getDays();
+        var subDay = days - day;
+
+        if (5 <= subDay) {
+            //还在 这个月内
+            console.log("在这个月内");
+        } else if (subDay < 5) {
+            console.log("不在这个月内");
+            var x = 5 - subDay;//到下个月的几号
+            console.log("差几天" + x);
+            if (month != 12) {
+                month = month + 1;
+                console.log(month + 1);
+            } else {
+                month = 1;
+                year = year + 1;
+            }
+            day = x;
+            console.log(day);
+        }
+        if (month < 10) {
+            month = '0' + month;
+        }
+        if (day < 10) {
+            day = '0' + day;
+        }
+        var mDate = year + '-' + month + '-' + day;
+        console.log(mDate);
+
+        $date.setAttribute("value", min);
+        $date.setAttribute("min", min);
+        $date.setAttribute("max", mDate);
+
+    }//PC浏览器有效
+
+    //检查日期
+    function checkTime() {
+        $date = $('#date');
+        var mDate = $date.prop('value');
+        if (!isInArray(initDate, mDate)) {
+            alert("日期可选择当前日期及今后五天");
+            $date.val("");
+            return false;
+        }
+        $("#day").val("上午");
+        makeTime();
+        ensureTime();
+    }
+
+
+    function isInArray(arr, arg) {
+        var i = arr.length;
+        while (i--) {
+            if (arr[i] === arg) {
+                return true;
+            }
+        }
+        return false;
+
+    }
+
+    //2017/08/30
+
+
+    //初始化这个月那几天是有效的
+    function initDate() {
+        var arr = new Array();
+        var days = getDays();
+        var subDay = days - day;
+        if (subDay < 5) {
+            var x = 5 - subDay;
+            var y = 5 - x;
+            for (var i = 0; i <= y; i++) {
+                if (month < 10) {
+                    arr.push(year + '-0' + month + '-' + day);
+                }
+                day++;
+            }
+            month = month + 1;
+            for (var i = 1; i <= x; i++) {
+                if (month < 10) {
+                    arr.push(year + '-0' + month + '-0' + i);
+                } else {
+                    arr.push(year + '-' + month + '-0' + i);
+                }
+
+            }
+        }
+        return arr;
+    }
+
+
+    //获取这个月有多少天
+    function getDays() {
+        var days;
+        if (month == 2) {
+            days = year % 4 == 0 ? 29 : 28;
+        }
+        else if (month == 1 || month == 3 || month == 5 || month == 7 || month == 8 || month == 10 || month == 12) {
+            days = 31;
+        }
+        else {
+            days = 30;
+        }
+        return days;
+    }
+
+
+    //选择上午或者下午
+    function timeChage(id) {
+        day = date.getDate();
+        var minute = date.getMinutes();
+        var nowTime = 0;
+        if (minute >=0 && minute <= 30) {
+            if (date.getHours() > 12) {
+                nowTime = ("0" + (date.getHours() - 12)) + ":" + '00' + "~" + ("0" + (date.getHours() - 12)) + ":" + '30';
+            } else if (date.getHours() >= 10 && date.getHours() <= 12) {
+                nowTime = (date.getHours()) + ":" + '00' + "~" + (date.getHours()) + ":" + '30';
+            } else if (date.getHours() <= 9) {
+                nowTime = ("0" + (date.getHours())) + ":" + '00' + "~" + ("0" + (date.getHours())) + ":" + '30';
+            }
+            console.log(nowTime);
+
+        } else {
+
+            if (date.getHours() > 12) {
+                nowTime = ("0" + (date.getHours() - 12)) + ":" + '30' + "~" + ("0" + (date.getHours() + 1 - 12)) + ":" + '00';
+            } else if (date.getHours() >= 10 && date.getHours() <= 12) {
+                nowTime = (date.getHours()) + ":" + '30' + "~" + (date.getHours() + 1) + ":" + '00';
+            } else if (date.getHours() < 9) {
+                nowTime = ("0" + (date.getHours())) + ":" + '30' + "~" + ("0" + (date.getHours())) + ":" + '00';
+            } else if (date.getHours() == 9) {
+
+                nowTime = ("0" + (date.getHours())) + ":" + '30' + "~" + (date.getHours() + 1) + ":" + '00';
+
+            }
+
+        }
+
+        var today = $("#date").prop("value").split("-")[2] == day ? true : false;
+
+        var $day = $("#" + id);
+        var isAfter = $day.val() == '下午' ? true : false;
+        if (today && date.getHours() > 19) {
+            if (isAfter) {
+                $time.empty();
+                for (var i = 8; i < times.length; i++) {
+                    $time.append('<option disabled="disabled">' + times[i] + "</option>");
+                }
+            } else {
+                $time.empty();
+                for (var i = 0; i < times.length - 14; i++) {
+                    $time.append('<option disabled="disabled">' + times[i] + "</option>");
+                }
+            }
+
+            return;
+        }
+        if (today && date.getHours() < 8) {
+            if (isAfter) {
+                $time.empty();
+                for (var i = 8; i < times.length; i++) {
+                    $time.append('<option>' + times[i] + "</option>");
+                }
+            } else {
+                $time.empty();
+                for (var i = 0; i < times.length - 14; i++) {
+                    $time.append('<option>' + times[i] + "</option>");
+                }
+            }
+
+            return;
+        }
+
+
+        if (isAfter) {
+            $time.empty();
+
+            for (var i = 8; i < times.length; i++) {
+                if (today) {
+
+                    if (times.indexOf(nowTime) > i || times.indexOf(nowTime) == -1) {
+                        $time.append('<option disabled="disabled">' + times[i] + "</option>");
+
+                    } else {
+                        $time.append('<option>' + times[i] + "</option>");
+                    }
+                } else {
+                    $time.append('<option>' + times[i] + "</option>");
+                }
+
+
+            }
+        } else {
+            $time.empty();
+            for (var i = 0; i < times.length - 14; i++) {
+
+                if (today) {
+
+                    if (times.indexOf(nowTime) > i) {
+                        $time.append('<option disabled="disabled">' + times[i] + "</option>");
+
+                    } else {
+                        $time.append('<option>' + times[i] + "</option>");
+                    }
+                } else {
+                    $time.append('<option>' + times[i] + "</option>");
+                }
+            }
+        }
+        ensureTime();
+    }
+
+
+    //确认时间
+    function ensureTime() {
+        var isAfterNoon = $("#day").val() == "下午" ? true : false;
+        $date = $('#date');
+        var time;
+        if ($("#time").val() != null) {
+            time = ($("#time").val()).split("~")[0];
+        }
+        var hour = time.split(":")[0];
+        var minute = time.split(":")[1];
+        if (isAfterNoon) {
+            var hour = time.split(":")[0];
+            var minute = time.split(":")[1];
+            if (hour != 12) {
+                hour = 12 + parseInt(hour.charAt(1));
+            }
+            time = hour + ':' + minute;
+        } else if (hour <= 9) {
+            console.log("不是下午");
+            time = hour + ':' + minute;
+        }
+
+        if ($date.prop('value') !== "") {       //时间格式不对请在此更改格式  2017-08-25T00%3A00
+            var date = $date.prop('value');
+            var value = date + " " + time;
+            console.log(value);
+            $("#visitetime").val(value);
+        } else {
+
+        }
+    }
+
+    //2017-08-18T01:59
+
+</script>
+</body>
+</html>

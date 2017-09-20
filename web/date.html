@@ -1,0 +1,150 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <script src="js/jquery.min.js"></script>
+    <!-- <script src="js/jquery-mobile.js"></script>-->
+</head>
+<body>
+<div>
+
+    <input id="date" type="date"/>
+
+    <select id="day" onchange="timeChage(this.id)">
+        <option id="noon">上午</option>
+        <option id="after">下午</option>
+    </select>
+
+    <select id="time">
+    </select>
+</div>
+<script>
+    var $time = $('#time');
+    var times = [
+        "9:00~9:30",
+        "9:30~10:00",
+        "10:00~10:30",
+        "10:30~11:00",
+        "11:00~11:30",
+        "11:30~12:00",//上午段
+        "12:00~12:30",
+        "12:30~01:00",
+        "01:00~01:30",
+        "01:30~02:00",
+        "02:00~02:30",
+        "02:30~03:00",
+        "03:00~03:30",
+        "03:30~04:00",
+        "04:00~04:30",
+        "04:30~05:00",
+        "05:00~05:30",
+        "05:30~06:00",
+        "06:00~06:30",
+        "06:30~07:00"
+    ]
+    $(function () {
+        makeDate();
+        makeTime();
+    });
+
+    function  makeTime() {
+        for (var i = 0; i < times.length - 6; i++) {
+            $time.append('<option>' + times[i] + "</option>");
+        }
+    }
+
+    function makeDate() {
+        var date = new Date();
+        var $date;
+        var year, month, day;
+        $date = $('#date');
+        //相隔五天
+        var date = new Date();
+
+        day = date.getDate();
+        month = date.getMonth() + 1;
+        year = date.getFullYear();
+        var mDay = day;
+        var mMonth = month;
+        if (day < 10) {
+            var mDay = '0' + day;
+        }
+
+        if (month < 10) {
+            var mMonth = '0' + month;
+        }
+        var min = year + "-" + mMonth + "-" + mDay;
+        var days = getDays();
+        var subDay = days - day;
+
+        console.log("this");
+        if (5 <= subDay) {
+            //还在 这个月内
+            console.log("在这个月内");
+        } else if (subDay < 5) {
+            console.log("不在这个月内");
+            var x = 5 - subDay;//到下个月的几号
+            console.log("差几天" + x);
+            if (month != 12) {
+                month = month + 1;
+                console.log(month + 1);
+            } else {
+                month = 1;
+                year = year + 1;
+            }
+            day = x;
+            console.log(day);
+        }
+        if (month < 10) {
+            month = '0' + month;
+        }
+        if (day < 10) {
+            day = '0' + day;
+        }
+        var mDate = year + '-' + month + '-' + day;
+        console.log(mDate);
+        $date.attr("value", min);
+        $date.attr({"min": min, "max": mDate});
+    }
+
+
+    function getDays() {
+        var date = new Date();
+        var year = date.getFullYear();
+        var mouth = date.getMonth() + 1;
+        var days;
+        if (mouth == 2) {
+            days = year % 4 == 0 ? 29 : 28;
+        }
+        else if (mouth == 1 || mouth == 3 || mouth == 5 || mouth == 7 || mouth == 8 || mouth == 10 || mouth == 12) {
+            days = 31;
+        }
+        else {
+            days = 30;
+        }
+
+        return days;
+    }
+
+    function timeChage(id) {
+        var $day = $("#" + id);
+        var isAfter = $day.val() == '下午' ? true : false;
+
+        if (isAfter) {
+            $time.empty();
+            for (var i = 6; i < times.length; i++) {
+                $time.innerHTML += null;
+                $time.append('<option>' + times[i] + "</option>");
+            }
+        } else {
+            $time.empty();
+            for (var i = 0; i < times.length - 6; i++) {
+                $time.append('<option>' + times[i] + "</option>");
+            }
+        }
+
+
+    }
+
+</script>
+</body>
+</html>
